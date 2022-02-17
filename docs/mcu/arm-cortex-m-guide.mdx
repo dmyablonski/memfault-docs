@@ -141,3 +141,40 @@ automatically to the Memfault cloud for analysis.
 ### Post Data to Cloud via Device Transport
 
 <PublishDataToCloud />
+
+## Frequently Asked Questions
+
+### Linker "Duplicate definition" error for `HardFault_Handler` etc.
+
+The Memfault SDK includes definitions for several exception handlers, for
+example:
+
+- `HardFault_Handler`
+- `MemoryManagement_Handler`
+
+etc.
+
+See
+[here](https://github.com/memfault/memfault-firmware-sdk/blob/24f2c2627c9f20e921e61d1b635cab58f34af3b8/components/panics/src/memfault_fault_handling_arm.c#L399-L427)
+for the implementation.
+
+These handlers should replace the existing ones in your project. You can remove
+the existing implementations entirely, or you can for mark them with the `weak`
+attribute (eg, using the `MEMFAULT_WEAK` compiler-agnostic define) to avoid the
+linker error.
+
+### What is `memfault_platform_coredump_get_regions()` / `memfault_platform_sanitize_address_range()`?
+
+`memfault_platform_coredump_get_regions()` tells the Memfault fault handler
+which memory regions should be collected as part of a coredump. The Memfault SDK
+by default will collect the CPU registers and a various Fault registers of
+interest. `memfault_platform_coredump_get_regions()` provides additional memory
+regions, which could be the entire contents of RAM, or selected sections only
+(the RAM-backed coredump storage provides a default implementation that collects
+a portion of the current stack).
+
+`memfault_platform_sanitize_address_range()` is used to filter out sections of
+memory that should not be captured by the Memfault fault handler as part of a
+coredump. It's only required for certain ports (including the RAM-backed
+coredump port). It can be left as the template implementation (no sanitation
+done) if no regions are to be excluded by the port requiring this function.
